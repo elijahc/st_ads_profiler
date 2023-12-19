@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import matplotlib as mpl
+mpl.use("agg")
 import streamlit as st
 import calmap
 import altair as alt
@@ -20,15 +22,10 @@ st.session_state.pnb = []
 st.session_state.spinal= []
 
 # Upload XLS data
-with st.sidebar.header('1. Upload your caselog'):
+st.sidebar.markdown("## Upload a caselog")
 
-    uploaded_file = st.sidebar.file_uploader("Upload ADS case log (xls)", type=["xls"])
+uploaded_file = st.sidebar.file_uploader(".xls file", type=["xls"])
 
-    st.sidebar.markdown("""
-        > *[How to get ACGME caselog](https://www.loom.com/share/9bc9d25c013b489abec09eb086bff1c9?sid=27f43eeb-4f16-4565-9cd4-c16a548ad252)*
-
-        > [Example XLS input file](https://github.com/elijahc/st_ads_profiler/raw/master/ref/ACLResProcDetail-edc-sample.xls)
-    """) 
 
 st.header('**ACGME case log profiler**')
 metrics_ph = st.empty()
@@ -162,18 +159,19 @@ if uploaded_file is not None:
             cmap='YlGn',
             fillcolor='lightgrey',
             linewidth=2,
-            fig_kws={'figsize':(8,6)},
+            # fig_kws={'figsize':(8,6)},
             daylabels=list('MTWTFSS'),
             dayticks=[0, 2, 4, 6],
             monthly_border=True,
         );
 
-        if date_col is 'offset_date':
+        if date_col == 'offset_date':
             xlabs = ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun']
             for ax in axs:
                 ax.set_xticklabels(xlabs);
         
         return fig,axs
+
 
     with yearplot_ph.container():
         try:
@@ -205,3 +203,9 @@ if uploaded_file is not None:
         c2.metric('Epidural (40)', len(st.session_state.epidural))
         c3.metric('Nerve Block (40)', len(st.session_state.pnb))
         c4.metric('Spinal (40)', len(st.session_state.spinal))
+
+st.sidebar.markdown("""
+    > *[How to get ACGME caselog](https://www.loom.com/share/9bc9d25c013b489abec09eb086bff1c9?sid=27f43eeb-4f16-4565-9cd4-c16a548ad252)*
+
+    > [Example XLS input file](https://github.com/elijahc/st_ads_profiler/raw/master/ref/ACLResProcDetail-edc-sample.xls)
+""") 
