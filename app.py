@@ -10,28 +10,27 @@ with st.sidebar.header('1. Upload your caselog'):
         [Example XLS input file](https://github.com/elijahc/st_ads_profiler/raw/master/ref/ACLResProcDetail-edc-sample.xls)
         """)
 
-with st.sidebar.header('2. Apply filters'):
-    pass
-
 if uploaded_file is not None:
     @st.cache_data
     def load_xls():
         xls_df = pd.read_excel(uploaded_file,skiprows=10)
-        last_row = xls_df.index[xls_df[xls_df.columns[-1]].str.startswith('Case Total')==True].tolist()
-        last_row = last_row[0]-1
-        xls_df = xls_df.iloc[:last_row].reset_index(drop=True)
-        xls_df = xls_df.dropna(axis=1,how='all')
-        xls_df = xls_df.dropna(axis=0,how='all')
-        xls_df = xls_df.rename(columns={k:v for k,v in zip(xls_df.columns,['attr','value','area-val'])})
+        df_end = xls_df[-10:]
+        last_row = df_end.index[df_end[df_end.columns[-1]].str.startswith('Case Total')==True].tolist()[0]
+        last_row = last_row-1
+        xls_df = xls_df.iloc[:last_row]
+        xls_df = xls_df.dropna(axis=1,how='all').dropna(axis=0,how='all')
+        xls_df = xls_df.rename(columns={k:v for k,v in zip(xls_df.columns,['attr','value','area-val'])}).reset_index(drop=True)
         # case_idxs = df.attr=='Case Date:'        
-        return xls_df 
+        return xls_df
+    
     df = load_xls()
 
     def extract_log_meta(df):
         df_dict = df.iloc[:6,:2].to_dict()
-        df_dict = {k:v for k,v in zip(df_dict['attr'].values(),df_dict['value'].values())}
-        return pd.Series(df_dict)
+        df_dict = pd.Series({k:v for k,v in zip(df_dict['attr'].values(),df_dict['value'].values())})
+        return df_dict
 
+    @st.cache_data
     def process_xls(df):
         case_idxs = df.attr=='Case Date:'
         case_grper = case_idxs.astype(int).cumsum()
@@ -40,14 +39,16 @@ if uploaded_file is not None:
         log_meta['month'] = log_meta['Case Date:'].dt.month
         log_meta['day_name'] = log_meta['Case Date:'].dt.day_name()
 
+        return log_meta
+    
+    lm = process_xls(df)
+
+    def plot_log(log_meta):
         log_meta_agg = log_meta.groupby(['Case Date:','Case Year:','Site:']).count()['year'].reset_index().rename(columns={'year':'count'})
         log_meta_agg['offset_date'] = log_meta_agg['Case Date:']-pd.Timedelta(546-365, 'd')
 
-        return log_meta, log_meta_agg
-
-    def plot_log(df):
         fig,axs = calmap.calendarplot(
-            df.set_index('offset_date')['count'],
+            log_meta_agg.set_index('offset_date')['count'],
             cmap='YlGn',
             fillcolor='lightgrey',
             linewidth=2,
@@ -61,16 +62,16 @@ if uploaded_file is not None:
         
         return fig,axs
 
-    st.header('**Input DataFrame**')
-    st.write(df)
-
-    lm, lma = process_xls(df)
-    # pr = ProfileReport(df, explorative=True)
     st.header('**Case Log yearplot**')
-    f,axs = plot_log(lma)
+    f,axs = plot_log(lm)
     st.pyplot(f)
 
     st.write('---')
 
+    st.header('**Input DataFrame**')
+    st.write(df)
+
+    st.write('---')
+
     st.header('**Processed Log**')
-    st.write(lma)
+    st.write(lm)
