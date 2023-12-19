@@ -1,3 +1,4 @@
 calmap
 streamlit
 xlrd
+altair
