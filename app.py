@@ -10,8 +10,11 @@ with st.sidebar.header('1. Upload your caselog'):
         [Example XLS input file](https://github.com/elijahc/st_ads_profiler/raw/master/ref/ACLResProcDetail-edc-sample.xls)
         """)
 
+    st.sidebar.markdown("""
+        [How to download caselog from ACGME](https://www.loom.com/share/9bc9d25c013b489abec09eb086bff1c9?sid=27f43eeb-4f16-4565-9cd4-c16a548ad252)
+    """) 
+
 if uploaded_file is not None:
-    @st.cache_data
     def load_xls():
         xls_df = pd.read_excel(uploaded_file,skiprows=10)
         df_end = xls_df[-10:]
