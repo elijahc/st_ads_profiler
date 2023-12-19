@@ -15,10 +15,14 @@ with st.sidebar.header('1. Upload your caselog xls  data'):
 if uploaded_file is not None:
     @st.cache_data
     def load_xls():
-        xls_df = pd.read_excel(uploaded_file,skiprows=10,usecols=[0,3,6])
+        xls_df = pd.read_excel(uploaded_file,skiprows=10)
+        last_row = xls_df.index[xls_df[xls_df.columns[-1]].str.startswith('Case Total')==True].tolist()
+        xls_df = xls_df.iloc[:last_row[0]-1].reset_index(drop=True)
+        xls_df = xls_df.dropna(axis=1,how='all')
         xls_df = xls_df.rename(columns={k:v for k,v in zip(xls_df.columns,['attr','value','area-val'])})
         # case_idxs = df.attr=='Case Date:'        
         return xls_df 
+
     df = load_xls()
 
     def extract_log_meta(df):
